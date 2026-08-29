@@ -1,0 +1,53 @@
+name: Build Workspace Images
+
+on:
+  push:
+    tags:
+      - 'ubuntu-*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  ubuntu-noble-desktop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/ubuntu-}"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/ubuntu-noble-desktop" >> "$GITHUB_OUTPUT"
+
+      - name: Check if image tag already exists
+        run: |
+          IMAGE="${{ steps.version.outputs.image }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          if docker manifest inspect "${IMAGE}:${VERSION}" > /dev/null 2>&1; then
+            echo "::error::Image ${IMAGE}:${VERSION} already exists. Use a different tag."
+            exit 1
+          fi
+          echo "Image tag ${VERSION} is available."
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerfile-kasm-ubuntu-noble-desktop
+          push: true
+          tags: ${{ steps.version.outputs.image }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
