@@ -1,16 +1,16 @@
-name: Build Workspace Images
+name: Build Ubuntu Desktop
 
 on:
   push:
     tags:
-      - 'ubuntu-*'
+      - 'ubuntu-desktop-*'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  ubuntu-noble-desktop:
+  ubuntu-desktop:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,9 +21,9 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/ubuntu-}"
+          TAG="${GITHUB_REF#refs/tags/ubuntu-desktop-}"
           echo "version=$TAG" >> "$GITHUB_OUTPUT"
-          echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/ubuntu-noble-desktop" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.REGISTRY }}/${{ github.repository_owner }}/ubuntu-desktop" >> "$GITHUB_OUTPUT"
 
       - name: Check if image tag already exists
         run: |
